@@ -25,6 +25,7 @@
 #include "arm_math.h"
 
 #include "lab1math.h"
+#include "transcendental.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,6 +97,22 @@ int main(void)
   // the max is 88.49 at index 5
   float array[10] = {48.21, 79.48, 24.27, 28.82, 78.24, 88.49, 31.19, 5.52,
   82.70, 77.73};
+
+  // quick Newton-Raphson sanity check (inspect in debugger)
+  float omega = 1.0f;
+  float phi = 0.5f;
+  float x0 = 0.5f;
+  float eps = 1.0e-5f;
+  uint32_t nr_max_iter = 25;
+  uint32_t iters_c = 0;
+  uint32_t iters_asm = 0;
+  NRStatus status_c = NR_MAXITER;
+  NRStatus status_asm = NR_MAXITER;
+  volatile float x_c = nr_transcendental_c(omega, phi, x0, nr_max_iter, eps,
+                                           &iters_c, &status_c);
+  volatile float x_asm = nr_transcendental_asm(omega, phi, x0, nr_max_iter, eps,
+                                               &iters_asm, &status_asm);
+  volatile float x_delta = x_c - x_asm;
   /* USER CODE END 2 */
 
   /* Infinite loop */
