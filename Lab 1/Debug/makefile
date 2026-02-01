@@ -60,8 +60,8 @@ all: main-build
 main-build: Lab\ 1.elf secondary-outputs
 
 # Tool invocations
-Lab\ 1.elf Lab\ 1.map: $(OBJS) $(USER_OBJS) /Users/victor/Library/CloudStorage/OneDrive-McGillUniversity/Courses/2025\ -\ 2026/ECSE\ 444/LABS/Lab\ 1/STM32L4S5VITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Lab 1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/victor/Library/CloudStorage/OneDrive-McGillUniversity/Courses/2025 - 2026/ECSE 444/LABS/Lab 1/STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Lab 1.map" -Wl,--gc-sections -static -L"/Users/victor/Library/CloudStorage/OneDrive-McGillUniversity/Courses/2025 - 2026/ECSE 444/LABS/Lab 1/Core/Lib" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Lab\ 1.elf Lab\ 1.map: $(OBJS) $(USER_OBJS) /Users/victor/Library/CloudStorage/OneDrive-McGillUniversity/Courses/2025\ -\ 2026/ECSE\ 444/ECSE-444---Labs/Lab\ 1/STM32L4S5VITX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Lab 1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/Users/victor/Library/CloudStorage/OneDrive-McGillUniversity/Courses/2025 - 2026/ECSE 444/ECSE-444---Labs/Lab 1/STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Lab 1.map" -Wl,--gc-sections -static -L"/Users/victor/Library/CloudStorage/OneDrive-McGillUniversity/Courses/2025 - 2026/ECSE 444/ECSE-444---Labs/Lab 1/Core/Lib" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
