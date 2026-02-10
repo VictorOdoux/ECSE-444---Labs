@@ -4,4 +4,4 @@
 //org.eclipse.debug.core.PREFERRED_DELEGATES/org.eclipse.cdt.launch.postmortemLaunchType=org.eclipse.cdt.dsf.gdb.launch.coreCLaunch,debug,;
 //org.eclipse.debug.core.PREFERRED_DELEGATES/org.eclipse.cdt.launch.remoteApplicationLaunchType=org.eclipse.rse.remotecdt.dsf.debug,debug,;
 eclipse.preferences.version=1
-prefWatchExpressions=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\n<watchExpressions>\n    <expression enabled\="true" text\="triangle"/>\n    <expression enabled\="true" text\="saw"/>\n</watchExpressions>\n
+prefWatchExpressions=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\n<watchExpressions>\n    <expression enabled\="true" text\="triangle"/>\n    <expression enabled\="true" text\="saw"/>\n    <expression enabled\="true" text\="adc_vref_raw"/>\n    <expression enabled\="true" text\="adc_vts_raw"/>\n    <expression enabled\="true" text\="vref_mV"/>\n    <expression enabled\="true" text\="temp_C"/>\n</watchExpressions>\n
