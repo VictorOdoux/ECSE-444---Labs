@@ -1,7 +1,21 @@
-22:35:34 **** Incremental Build of configuration Debug for project Lab2 ****
+16:58:51 **** Incremental Build of configuration Debug for project Lab2 ****
 make -j10 all 
 arm-none-eabi-size  Lab2.elf 
    text	   data	    bss	    dec	    hex	filename
-  25512	     16	   1864	  27392	   6b00	Lab2.elf
+  24108	     16	   1864	  25988	   6584	Lab2.elf
+Finished building: default.size.stdout
+ 
+16:58:56 **** Incremental Build of configuration Debug for project Lab2 ****
+make -j10 all 
+arm-none-eabi-size  Lab2.elf 
+   text	   data	    bss	    dec	    hex	filename
+  24108	     16	   1864	  25988	   6584	Lab2.elf
+Finished building: default.size.stdout
+ 
+17:00:02 **** Incremental Build of configuration Debug for project Lab2 ****
+make -j10 all 
+arm-none-eabi-size  Lab2.elf 
+   text	   data	    bss	    dec	    hex	filename
+  24108	     16	   1864	  25988	   6584	Lab2.elf
 Finished building: default.size.stdout
  

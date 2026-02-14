@@ -23,19 +23,21 @@
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
 #include "stm32l4xx_hal_adc_ex.h"   // for __HAL_ADC_CALC_* macros
-#include <math.h>
+#include "arm_math.h"   // arm_sin_f32()
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef enum { MODE_FIXED = 0, MODE_TEMP = 1 } mode_t;
+typedef enum { W_TRI = 0, W_SAW = 1, W_SINE = 2 } wave_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define N_SAMPLES  64u
 #define SAMPLE_US  8u     // keep your current base pitch
+#define PI_F       3.14159265358979323846f
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,21 +54,18 @@ DAC_HandleTypeDef hdac1;
 /* Put these as globals so SWV Data Trace can watch them easily */
 __attribute__((aligned(4))) volatile uint32_t triangle = 0;
 __attribute__((aligned(4))) volatile uint32_t saw      = 0;
+__attribute__((aligned(4))) volatile uint32_t sine = 0;
 
 __attribute__((aligned(4))) volatile uint32_t adc_vref_raw = 0;
 __attribute__((aligned(4))) volatile uint32_t adc_vts_raw  = 0;
 __attribute__((aligned(4))) volatile uint32_t vref_mV      = 0;
 __attribute__((aligned(4))) volatile int32_t  temp_C       = 0;
 
-typedef enum { MODE_FIXED=0, MODE_TEMP=1 } mode_t;
-typedef enum { W_TRI=0, W_SAW=1, W_SINE=2 } wave_t;
-
-__attribute__((aligned(4))) volatile uint32_t dac_out = 0;
-__attribute__((aligned(4))) volatile mode_t mode = MODE_FIXED;
-__attribute__((aligned(4))) volatile wave_t fixed_wave = W_TRI;
+__attribute__((aligned(4))) volatile uint32_t dac_out   = 0;
+__attribute__((aligned(4))) volatile mode_t   mode      = MODE_FIXED;
+__attribute__((aligned(4))) volatile wave_t   fixed_wave= W_TRI;
 
 static uint16_t sine_lut[N_SAMPLES];
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -78,13 +77,13 @@ static void MX_ADC1_Init(void);
 static void DWT_Init(void);
 static void DWT_Delay_us(uint32_t us);
 static uint16_t tri_from_phase(uint32_t phase, uint32_t n_samples);
+static void     BuildSineLUT(void);
+static uint16_t sample_from_wave(wave_t w, uint32_t phase);
 
 static uint32_t ADC1_ReadVrefint_Regular(void);
 static uint32_t ADC1_ReadTemp_Injected(void);
 
-static void BuildSineLUT(void);
 static void HandleButton(void);
-static uint16_t sample_from_wave(wave_t w, uint32_t phase);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -129,7 +128,7 @@ int main(void)
 
 
     /* Start both DAC channels */
-    HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);   // Start conversion:contentReference[oaicite:7]{index=7}
+    HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
     //HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
 
     /* Calibrate ADC once */
@@ -173,24 +172,30 @@ int main(void)
 	  /* --- Part 4 DAC output selection --- */
 	  wave_t w = (mode == MODE_FIXED) ? fixed_wave : W_SINE;
 
-	  /* Temperature-dependent pitch (simple, obvious in demo):
+	  /* Temperature-dependent pitch:
 	     phase_step increases with temp => higher frequency */
 	  uint32_t phase_step = 1u;
 	  if (mode == MODE_TEMP)
 	  {
 	    int32_t tC = temp_C;
-	    if (tC < 0) tC = 0;
+	    if (tC < 0)  tC = 0;
 	    if (tC > 60) tC = 60;
 	    phase_step = 1u + (uint32_t)(tC / 15);   // 1..5
 	  }
 
-	  /* Compute samples (still keep triangle/saw globals for SWV if you want) */
+	  /* Compute all three (so SWV can plot them) */
 	  triangle = tri_from_phase(phase, N_SAMPLES);
 	  saw      = (phase * 4095u) / (N_SAMPLES - 1u);
+	  sine     = sine_lut[phase];
 
-	  /* Actual DAC output on D7 = DAC_CHANNEL_1 (PA4) */
+	  /* This is the ACTUAL output that satisfies Part 4 */
 	  dac_out = sample_from_wave(w, phase);
+
+	  /* Send output to DAC:
+	     - CH1 = "speaker" / main output (what you demo for Part 4)
+	     - CH2 = optional debug waveform (kept as saw here) */
 	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac_out);
+	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, saw);
 
 	  phase = (phase + phase_step) % N_SAMPLES;
 	  DWT_Delay_us(SAMPLE_US);
@@ -423,13 +428,14 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
 static void BuildSineLUT(void)
 {
   for (uint32_t i = 0; i < N_SAMPLES; i++)
   {
-    float x = 2.0f * 3.14159265358979323846f * ((float)i / (float)N_SAMPLES);
-    float s = sinf(x);                 // -1..1
-    float y = (s + 1.0f) * 0.5f;       // 0..1
+    float theta = (2.0f * PI_F * (float)i) / (float)N_SAMPLES;  // 0..2pi
+    float s = arm_sin_f32(theta);                               // -1..1
+    float y = 0.5f * (s + 1.0f);                                // 0..1
     uint32_t v = (uint32_t)(y * 4095.0f + 0.5f);
     if (v > 4095u) v = 4095u;
     sine_lut[i] = (uint16_t)v;
@@ -456,7 +462,6 @@ static void HandleButton(void)
   GPIO_PinState now = HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin);
   uint32_t t = HAL_GetTick();
 
-  /* Detect falling edge + debounce */
   if ((last == GPIO_PIN_SET) && (now == GPIO_PIN_RESET) && ((t - last_ms) > 200u))
   {
     last_ms = t;
@@ -476,7 +481,6 @@ static void HandleButton(void)
 
   last = now;
 }
-
 
 static uint32_t ADC1_ReadVrefint_Regular(void)
 {
@@ -500,10 +504,8 @@ static uint32_t ADC1_ReadTemp_Injected(void)
   return val;
 }
 
-
 static uint16_t tri_from_phase(uint32_t phase, uint32_t n_samples)
 {
-  /* Triangle wave 0..4095..0 over n_samples */
   const uint32_t half = n_samples / 2u;
   uint32_t val;
 
