@@ -22,8 +22,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdint.h>
-#include "stm32l4xx_hal_adc_ex.h"   // for __HAL_ADC_CALC_* macros
-#include "arm_math.h"   // arm_sin_f32()
+#include "stm32l4xx_hal_adc_ex.h"
+#include "arm_math.h"
 
 /* USER CODE END Includes */
 
@@ -36,7 +36,7 @@ typedef enum { W_TRI = 0, W_SAW = 1, W_SINE = 2 } wave_t;
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define N_SAMPLES  64u
-#define SAMPLE_US  8u     // keep your current base pitch
+#define SAMPLE_US  8u
 #define PI_F       3.14159265358979323846f
 /* USER CODE END PD */
 
@@ -51,7 +51,6 @@ ADC_HandleTypeDef hadc1;
 DAC_HandleTypeDef hdac1;
 
 /* USER CODE BEGIN PV */
-/* Put these as globals so SWV Data Trace can watch them easily */
 __attribute__((aligned(4))) volatile uint32_t triangle = 0;
 __attribute__((aligned(4))) volatile uint32_t saw      = 0;
 __attribute__((aligned(4))) volatile uint32_t sine = 0;
@@ -127,9 +126,9 @@ int main(void)
   BuildSineLUT();
 
 
-    /* Start both DAC channels */
+    /* Start DAC channels */
     HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
-    //HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+    //HAL_DAC_Start(&hdac1, DAC_CHANNEL_2); /*For part 2 */
 
     /* Calibrate ADC once */
     if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK)
@@ -156,7 +155,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	  HandleButton();
 
-	  /* --- ADC Part 3: poll Vrefint + Temp every ~200ms --- */
+	  /* poll Vrefint + Temp every ~200ms */
 	  uint32_t now = HAL_GetTick();
 	  if ((now - last_adc_ms) >= 200u)
 	  {
@@ -169,7 +168,11 @@ int main(void)
 	    temp_C  = (int32_t)__HAL_ADC_CALC_TEMPERATURE(vref_mV, adc_vts_raw, ADC_RESOLUTION_12B);
 	  }
 
-	  /* --- Part 4 DAC output selection --- */
+	  triangle = tri_from_phase(phase, N_SAMPLES);
+	  saw      = (phase * 4095u) / (N_SAMPLES - 1u);
+	  sine     = sine_lut[phase];
+
+	  /* DAC output selection */
 	  wave_t w = (mode == MODE_FIXED) ? fixed_wave : W_SINE;
 
 	  /* Temperature-dependent pitch:
@@ -183,17 +186,9 @@ int main(void)
 	    phase_step = 1u + (uint32_t)(tC / 15);   // 1..5
 	  }
 
-	  /* Compute all three (so SWV can plot them) */
-	  triangle = tri_from_phase(phase, N_SAMPLES);
-	  saw      = (phase * 4095u) / (N_SAMPLES - 1u);
-	  sine     = sine_lut[phase];
-
-	  /* This is the ACTUAL output that satisfies Part 4 */
 	  dac_out = sample_from_wave(w, phase);
 
-	  /* Send output to DAC:
-	     - CH1 = "speaker" / main output (what you demo for Part 4)
-	     - CH2 = optional debug waveform (kept as saw here) */
+	  /* Send output to DAC */
 	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac_out);
 	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, saw);
 
@@ -452,8 +447,7 @@ static uint16_t sample_from_wave(wave_t w, uint32_t phase)
   }
 }
 
-/* Polling + debounce + edge detect.
-   Assumes active-low button: pressed = GPIO_PIN_RESET. */
+/* Polling + debounce + edge detect, pressed = GPIO_PIN_RESET. */
 static void HandleButton(void)
 {
   static GPIO_PinState last = GPIO_PIN_SET;

@@ -1,21 +1,14 @@
-16:58:51 **** Incremental Build of configuration Debug for project Lab2 ****
-make -j10 all 
+15:08:17 **** Incremental Build of configuration Debug for project Lab2 ****
+make -j28 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L4S5xx -c -I../Core/Inc -I../Drivers/CMSIS/DSP/Include -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "Lab2.elf" @"objects.list"  -larm_cortexM4lf_math -mcpu=cortex-m4 -T"C:\Users\victo\Documents\ECSE 321\ECSE-444---Labs\Lab2\STM32L4S5VITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Lab2.map" -Wl,--gc-sections -static -L../Core/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: Lab2.elf
+ 
 arm-none-eabi-size  Lab2.elf 
+arm-none-eabi-objdump -h -S Lab2.elf  > "Lab2.list"
    text	   data	    bss	    dec	    hex	filename
   24108	     16	   1864	  25988	   6584	Lab2.elf
 Finished building: default.size.stdout
  
-16:58:56 **** Incremental Build of configuration Debug for project Lab2 ****
-make -j10 all 
-arm-none-eabi-size  Lab2.elf 
-   text	   data	    bss	    dec	    hex	filename
-  24108	     16	   1864	  25988	   6584	Lab2.elf
-Finished building: default.size.stdout
- 
-17:00:02 **** Incremental Build of configuration Debug for project Lab2 ****
-make -j10 all 
-arm-none-eabi-size  Lab2.elf 
-   text	   data	    bss	    dec	    hex	filename
-  24108	     16	   1864	  25988	   6584	Lab2.elf
-Finished building: default.size.stdout
+Finished building: Lab2.list
  

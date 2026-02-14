@@ -37,19 +37,19 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  16 .debug_macro  0002b9da  00000000  00000000  000199bb  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000c520  00000000  00000000  00045395  2**0
+ 17 .debug_line   0000ca8b  00000000  00000000  00045395  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    00112dcf  00000000  00000000  000518b5  2**0
+ 18 .debug_str    00112ddd  00000000  00000000  00051e20  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      000000b8  00000000  00000000  00164684  2**0
+ 19 .comment      000000b8  00000000  00000000  00164bfd  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00002f8c  00000000  00000000  0016473c  2**2
+ 20 .debug_frame  00002f8c  00000000  00000000  00164cb8  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000057  00000000  00000000  001676c8  2**0
+ 21 .debug_line_str 00000065  00000000  00000000  00167c44  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .debug_loc    000000fa  00000000  00000000  0016771f  2**0
+ 22 .debug_loc    000000fa  00000000  00000000  00167ca9  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 23 .debug_ranges 00000010  00000000  00000000  00167819  2**0
+ 23 .debug_ranges 00000010  00000000  00000000  00167da3  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -124,12 +124,12 @@ int main(void)
  800021a:	f000 fa6f 	bl	80006fc <BuildSineLUT>
 
 
-    /* Start both DAC channels */
+    /* Start DAC channels */
     HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
  800021e:	2100      	movs	r1, #0
  8000220:	4860      	ldr	r0, [pc, #384]	@ (80003a4 <main+0x1a8>)
  8000222:	f003 f952 	bl	80034ca <HAL_DAC_Start>
-    //HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
+    //HAL_DAC_Start(&hdac1, DAC_CHANNEL_2); /*For part 2 */
 
     /* Calibrate ADC once */
     if (HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED) != HAL_OK)
@@ -166,7 +166,7 @@ int main(void)
 	  HandleButton();
  8000248:	f000 fada 	bl	8000800 <HandleButton>
 
-	  /* --- ADC Part 3: poll Vrefint + Temp every ~200ms --- */
+	  /* poll Vrefint + Temp every ~200ms */
 	  uint32_t now = HAL_GetTick();
  800024c:	f000 fd6c 	bl	8000d28 <HAL_GetTick>
  8000250:	6078      	str	r0, [r7, #4]
@@ -238,91 +238,89 @@ int main(void)
  80002d6:	6013      	str	r3, [r2, #0]
 	  }
 
-	  /* --- Part 4 DAC output selection --- */
+	  triangle = tri_from_phase(phase, N_SAMPLES);
+ 80002d8:	2140      	movs	r1, #64	@ 0x40
+ 80002da:	6978      	ldr	r0, [r7, #20]
+ 80002dc:	f000 fb3a 	bl	8000954 <tri_from_phase>
+ 80002e0:	4603      	mov	r3, r0
+ 80002e2:	461a      	mov	r2, r3
+ 80002e4:	4b39      	ldr	r3, [pc, #228]	@ (80003cc <main+0x1d0>)
+ 80002e6:	601a      	str	r2, [r3, #0]
+	  saw      = (phase * 4095u) / (N_SAMPLES - 1u);
+ 80002e8:	697a      	ldr	r2, [r7, #20]
+ 80002ea:	4613      	mov	r3, r2
+ 80002ec:	031b      	lsls	r3, r3, #12
+ 80002ee:	1a9a      	subs	r2, r3, r2
+ 80002f0:	4b37      	ldr	r3, [pc, #220]	@ (80003d0 <main+0x1d4>)
+ 80002f2:	fba3 1302 	umull	r1, r3, r3, r2
+ 80002f6:	1ad2      	subs	r2, r2, r3
+ 80002f8:	0852      	lsrs	r2, r2, #1
+ 80002fa:	4413      	add	r3, r2
+ 80002fc:	095b      	lsrs	r3, r3, #5
+ 80002fe:	4a35      	ldr	r2, [pc, #212]	@ (80003d4 <main+0x1d8>)
+ 8000300:	6013      	str	r3, [r2, #0]
+	  sine     = sine_lut[phase];
+ 8000302:	4a35      	ldr	r2, [pc, #212]	@ (80003d8 <main+0x1dc>)
+ 8000304:	697b      	ldr	r3, [r7, #20]
+ 8000306:	f832 3013 	ldrh.w	r3, [r2, r3, lsl #1]
+ 800030a:	461a      	mov	r2, r3
+ 800030c:	4b33      	ldr	r3, [pc, #204]	@ (80003dc <main+0x1e0>)
+ 800030e:	601a      	str	r2, [r3, #0]
+
+	  /* DAC output selection */
 	  wave_t w = (mode == MODE_FIXED) ? fixed_wave : W_SINE;
- 80002d8:	4b3c      	ldr	r3, [pc, #240]	@ (80003cc <main+0x1d0>)
- 80002da:	781b      	ldrb	r3, [r3, #0]
- 80002dc:	b2db      	uxtb	r3, r3
- 80002de:	2b00      	cmp	r3, #0
- 80002e0:	d103      	bne.n	80002ea <main+0xee>
- 80002e2:	4b3b      	ldr	r3, [pc, #236]	@ (80003d0 <main+0x1d4>)
- 80002e4:	781b      	ldrb	r3, [r3, #0]
- 80002e6:	b2db      	uxtb	r3, r3
- 80002e8:	e000      	b.n	80002ec <main+0xf0>
- 80002ea:	2302      	movs	r3, #2
- 80002ec:	70fb      	strb	r3, [r7, #3]
+ 8000310:	4b33      	ldr	r3, [pc, #204]	@ (80003e0 <main+0x1e4>)
+ 8000312:	781b      	ldrb	r3, [r3, #0]
+ 8000314:	b2db      	uxtb	r3, r3
+ 8000316:	2b00      	cmp	r3, #0
+ 8000318:	d103      	bne.n	8000322 <main+0x126>
+ 800031a:	4b32      	ldr	r3, [pc, #200]	@ (80003e4 <main+0x1e8>)
+ 800031c:	781b      	ldrb	r3, [r3, #0]
+ 800031e:	b2db      	uxtb	r3, r3
+ 8000320:	e000      	b.n	8000324 <main+0x128>
+ 8000322:	2302      	movs	r3, #2
+ 8000324:	70fb      	strb	r3, [r7, #3]
 
 	  /* Temperature-dependent pitch:
 	     phase_step increases with temp => higher frequency */
 	  uint32_t phase_step = 1u;
- 80002ee:	2301      	movs	r3, #1
- 80002f0:	60fb      	str	r3, [r7, #12]
+ 8000326:	2301      	movs	r3, #1
+ 8000328:	60fb      	str	r3, [r7, #12]
 	  if (mode == MODE_TEMP)
- 80002f2:	4b36      	ldr	r3, [pc, #216]	@ (80003cc <main+0x1d0>)
- 80002f4:	781b      	ldrb	r3, [r3, #0]
- 80002f6:	b2db      	uxtb	r3, r3
- 80002f8:	2b01      	cmp	r3, #1
- 80002fa:	d116      	bne.n	800032a <main+0x12e>
+ 800032a:	4b2d      	ldr	r3, [pc, #180]	@ (80003e0 <main+0x1e4>)
+ 800032c:	781b      	ldrb	r3, [r3, #0]
+ 800032e:	b2db      	uxtb	r3, r3
+ 8000330:	2b01      	cmp	r3, #1
+ 8000332:	d116      	bne.n	8000362 <main+0x166>
 	  {
 	    int32_t tC = temp_C;
- 80002fc:	4b32      	ldr	r3, [pc, #200]	@ (80003c8 <main+0x1cc>)
- 80002fe:	681b      	ldr	r3, [r3, #0]
- 8000300:	60bb      	str	r3, [r7, #8]
+ 8000334:	4b24      	ldr	r3, [pc, #144]	@ (80003c8 <main+0x1cc>)
+ 8000336:	681b      	ldr	r3, [r3, #0]
+ 8000338:	60bb      	str	r3, [r7, #8]
 	    if (tC < 0)  tC = 0;
- 8000302:	68bb      	ldr	r3, [r7, #8]
- 8000304:	2b00      	cmp	r3, #0
- 8000306:	da01      	bge.n	800030c <main+0x110>
- 8000308:	2300      	movs	r3, #0
- 800030a:	60bb      	str	r3, [r7, #8]
+ 800033a:	68bb      	ldr	r3, [r7, #8]
+ 800033c:	2b00      	cmp	r3, #0
+ 800033e:	da01      	bge.n	8000344 <main+0x148>
+ 8000340:	2300      	movs	r3, #0
+ 8000342:	60bb      	str	r3, [r7, #8]
 	    if (tC > 60) tC = 60;
- 800030c:	68bb      	ldr	r3, [r7, #8]
- 800030e:	2b3c      	cmp	r3, #60	@ 0x3c
- 8000310:	dd01      	ble.n	8000316 <main+0x11a>
- 8000312:	233c      	movs	r3, #60	@ 0x3c
- 8000314:	60bb      	str	r3, [r7, #8]
+ 8000344:	68bb      	ldr	r3, [r7, #8]
+ 8000346:	2b3c      	cmp	r3, #60	@ 0x3c
+ 8000348:	dd01      	ble.n	800034e <main+0x152>
+ 800034a:	233c      	movs	r3, #60	@ 0x3c
+ 800034c:	60bb      	str	r3, [r7, #8]
 	    phase_step = 1u + (uint32_t)(tC / 15);   // 1..5
- 8000316:	68bb      	ldr	r3, [r7, #8]
- 8000318:	4a2e      	ldr	r2, [pc, #184]	@ (80003d4 <main+0x1d8>)
- 800031a:	fb82 1203 	smull	r1, r2, r2, r3
- 800031e:	441a      	add	r2, r3
- 8000320:	10d2      	asrs	r2, r2, #3
- 8000322:	17db      	asrs	r3, r3, #31
- 8000324:	1ad3      	subs	r3, r2, r3
- 8000326:	3301      	adds	r3, #1
- 8000328:	60fb      	str	r3, [r7, #12]
+ 800034e:	68bb      	ldr	r3, [r7, #8]
+ 8000350:	4a25      	ldr	r2, [pc, #148]	@ (80003e8 <main+0x1ec>)
+ 8000352:	fb82 1203 	smull	r1, r2, r2, r3
+ 8000356:	441a      	add	r2, r3
+ 8000358:	10d2      	asrs	r2, r2, #3
+ 800035a:	17db      	asrs	r3, r3, #31
+ 800035c:	1ad3      	subs	r3, r2, r3
+ 800035e:	3301      	adds	r3, #1
+ 8000360:	60fb      	str	r3, [r7, #12]
 	  }
 
-	  /* Compute all three (so SWV can plot them) */
-	  triangle = tri_from_phase(phase, N_SAMPLES);
- 800032a:	2140      	movs	r1, #64	@ 0x40
- 800032c:	6978      	ldr	r0, [r7, #20]
- 800032e:	f000 fb11 	bl	8000954 <tri_from_phase>
- 8000332:	4603      	mov	r3, r0
- 8000334:	461a      	mov	r2, r3
- 8000336:	4b28      	ldr	r3, [pc, #160]	@ (80003d8 <main+0x1dc>)
- 8000338:	601a      	str	r2, [r3, #0]
-	  saw      = (phase * 4095u) / (N_SAMPLES - 1u);
- 800033a:	697a      	ldr	r2, [r7, #20]
- 800033c:	4613      	mov	r3, r2
- 800033e:	031b      	lsls	r3, r3, #12
- 8000340:	1a9a      	subs	r2, r3, r2
- 8000342:	4b26      	ldr	r3, [pc, #152]	@ (80003dc <main+0x1e0>)
- 8000344:	fba3 1302 	umull	r1, r3, r3, r2
- 8000348:	1ad2      	subs	r2, r2, r3
- 800034a:	0852      	lsrs	r2, r2, #1
- 800034c:	4413      	add	r3, r2
- 800034e:	095b      	lsrs	r3, r3, #5
- 8000350:	4a23      	ldr	r2, [pc, #140]	@ (80003e0 <main+0x1e4>)
- 8000352:	6013      	str	r3, [r2, #0]
-	  sine     = sine_lut[phase];
- 8000354:	4a23      	ldr	r2, [pc, #140]	@ (80003e4 <main+0x1e8>)
- 8000356:	697b      	ldr	r3, [r7, #20]
- 8000358:	f832 3013 	ldrh.w	r3, [r2, r3, lsl #1]
- 800035c:	461a      	mov	r2, r3
- 800035e:	4b22      	ldr	r3, [pc, #136]	@ (80003e8 <main+0x1ec>)
- 8000360:	601a      	str	r2, [r3, #0]
-
-	  /* This is the ACTUAL output that satisfies Part 4 */
 	  dac_out = sample_from_wave(w, phase);
  8000362:	78fb      	ldrb	r3, [r7, #3]
  8000364:	6979      	ldr	r1, [r7, #20]
@@ -333,9 +331,7 @@ int main(void)
  8000370:	4b1e      	ldr	r3, [pc, #120]	@ (80003ec <main+0x1f0>)
  8000372:	601a      	str	r2, [r3, #0]
 
-	  /* Send output to DAC:
-	     - CH1 = "speaker" / main output (what you demo for Part 4)
-	     - CH2 = optional debug waveform (kept as saw here) */
+	  /* Send output to DAC */
 	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac_out);
  8000374:	4b1d      	ldr	r3, [pc, #116]	@ (80003ec <main+0x1f0>)
  8000376:	681b      	ldr	r3, [r3, #0]
@@ -344,7 +340,7 @@ int main(void)
  800037c:	4809      	ldr	r0, [pc, #36]	@ (80003a4 <main+0x1a8>)
  800037e:	f003 f8f6 	bl	800356e <HAL_DAC_SetValue>
 	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, saw);
- 8000382:	4b17      	ldr	r3, [pc, #92]	@ (80003e0 <main+0x1e4>)
+ 8000382:	4b14      	ldr	r3, [pc, #80]	@ (80003d4 <main+0x1d8>)
  8000384:	681b      	ldr	r3, [r3, #0]
  8000386:	2200      	movs	r2, #0
  8000388:	2110      	movs	r1, #16
@@ -372,14 +368,14 @@ int main(void)
  80003c0:	1fff75a8 	.word	0x1fff75a8
  80003c4:	057619f1 	.word	0x057619f1
  80003c8:	200000c0 	.word	0x200000c0
- 80003cc:	200000c8 	.word	0x200000c8
- 80003d0:	200000cc 	.word	0x200000cc
- 80003d4:	88888889 	.word	0x88888889
- 80003d8:	200000a8 	.word	0x200000a8
- 80003dc:	04104105 	.word	0x04104105
- 80003e0:	200000ac 	.word	0x200000ac
- 80003e4:	200000d0 	.word	0x200000d0
- 80003e8:	200000b0 	.word	0x200000b0
+ 80003cc:	200000a8 	.word	0x200000a8
+ 80003d0:	04104105 	.word	0x04104105
+ 80003d4:	200000ac 	.word	0x200000ac
+ 80003d8:	200000d0 	.word	0x200000d0
+ 80003dc:	200000b0 	.word	0x200000b0
+ 80003e0:	200000c8 	.word	0x200000c8
+ 80003e4:	200000cc 	.word	0x200000cc
+ 80003e8:	88888889 	.word	0x88888889
  80003ec:	200000c4 	.word	0x200000c4
 
 080003f0 <SystemClock_Config>:
@@ -1060,8 +1056,7 @@ static uint16_t sample_from_wave(wave_t w, uint32_t phase)
 
 08000800 <HandleButton>:
 
-/* Polling + debounce + edge detect.
-   Assumes active-low button: pressed = GPIO_PIN_RESET. */
+/* Polling + debounce + edge detect, pressed = GPIO_PIN_RESET. */
 static void HandleButton(void)
 {
  8000800:	b580      	push	{r7, lr}
@@ -2032,7 +2027,7 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
         HAL_NVIC_SetPriority(SysTick_IRQn, TickPriority, 0U);
  8000cc4:	2200      	movs	r2, #0
  8000cc6:	6879      	ldr	r1, [r7, #4]
- 8000cc8:	f04f 30ff 	mov.w	r0, #4294967295	@ 0xffffffff
+ 8000cc8:	f04f 30ff 	mov.w	r0, #4294967295
  8000ccc:	f002 fbb3 	bl	8003436 <HAL_NVIC_SetPriority>
         uwTickPrio = TickPriority;
  8000cd0:	4a0a      	ldr	r2, [pc, #40]	@ (8000cfc <HAL_InitTick+0x74>)
@@ -2144,7 +2139,7 @@ __weak void HAL_Delay(uint32_t Delay)
   /* Add a period to guaranty minimum wait */
   if (wait < HAL_MAX_DELAY)
  8000d52:	68fb      	ldr	r3, [r7, #12]
- 8000d54:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 8000d54:	f1b3 3fff 	cmp.w	r3, #4294967295
  8000d58:	d005      	beq.n	8000d66 <HAL_Delay+0x26>
   {
     wait += (uint32_t)uwTickFreq;
@@ -3761,7 +3756,7 @@ HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef *hadc, uint32_t Ti
     /* Check if timeout is disabled (set to infinite wait) */
     if (Timeout != HAL_MAX_DELAY)
  80015d2:	683b      	ldr	r3, [r7, #0]
- 80015d4:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 80015d4:	f1b3 3fff 	cmp.w	r3, #4294967295
  80015d8:	d01d      	beq.n	8001616 <HAL_ADC_PollForConversion+0x86>
     {
       if (((HAL_GetTick() - tickstart) > Timeout) || (Timeout == 0UL))
@@ -6636,7 +6631,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef *hadc, u
     /* Check if timeout is disabled (set to infinite wait) */
     if (Timeout != HAL_MAX_DELAY)
  8002784:	683b      	ldr	r3, [r7, #0]
- 8002786:	f1b3 3fff 	cmp.w	r3, #4294967295	@ 0xffffffff
+ 8002786:	f1b3 3fff 	cmp.w	r3, #4294967295
  800278a:	d01d      	beq.n	80027c8 <HAL_ADCEx_InjectedPollForConversion+0x68>
     {
       if (((HAL_GetTick() - tickstart) > Timeout) || (Timeout == 0UL))
@@ -8541,7 +8536,7 @@ __STATIC_INLINE uint32_t NVIC_EncodePriority (uint32_t PriorityGroup, uint32_t P
 
   return (
            ((PreemptPriority & (uint32_t)((1UL << (PreemptPriorityBits)) - 1UL)) << SubPriorityBits) |
- 80033a8:	f04f 32ff 	mov.w	r2, #4294967295	@ 0xffffffff
+ 80033a8:	f04f 32ff 	mov.w	r2, #4294967295
  80033ac:	69bb      	ldr	r3, [r7, #24]
  80033ae:	fa02 f303 	lsl.w	r3, r2, r3
  80033b2:	43da      	mvns	r2, r3
@@ -8550,7 +8545,7 @@ __STATIC_INLINE uint32_t NVIC_EncodePriority (uint32_t PriorityGroup, uint32_t P
  80033b8:	697b      	ldr	r3, [r7, #20]
  80033ba:	409a      	lsls	r2, r3
            ((SubPriority     & (uint32_t)((1UL << (SubPriorityBits    )) - 1UL)))
- 80033bc:	f04f 31ff 	mov.w	r1, #4294967295	@ 0xffffffff
+ 80033bc:	f04f 31ff 	mov.w	r1, #4294967295
  80033c0:	697b      	ldr	r3, [r7, #20]
  80033c2:	fa01 f303 	lsl.w	r3, r1, r3
  80033c6:	43d9      	mvns	r1, r3
@@ -8596,7 +8591,7 @@ __STATIC_INLINE uint32_t SysTick_Config(uint32_t ticks)
  80033f8:	6053      	str	r3, [r2, #4]
   NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
  80033fa:	210f      	movs	r1, #15
- 80033fc:	f04f 30ff 	mov.w	r0, #4294967295	@ 0xffffffff
+ 80033fc:	f04f 30ff 	mov.w	r0, #4294967295
  8003400:	f7ff ff8e 	bl	8003320 <__NVIC_SetPriority>
   SysTick->VAL   = 0UL;                                             /* Load the SysTick Counter Value */
  8003404:	4b05      	ldr	r3, [pc, #20]	@ (800341c <SysTick_Config+0x40>)
