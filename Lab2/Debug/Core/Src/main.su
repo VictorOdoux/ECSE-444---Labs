@@ -1,0 +1,14 @@
+../Core/Src/main.c:98:5:main	32	static
+../Core/Src/main.c:212:6:SystemClock_Config	96	static
+../Core/Src/main.c:263:13:MX_ADC1_Init	88	static
+../Core/Src/main.c:346:13:MX_DAC1_Init	48	static
+../Core/Src/main.c:397:13:MX_GPIO_Init	40	static
+../Core/Src/main.c:432:13:BuildSineLUT	32	static
+../Core/Src/main.c:445:17:sample_from_wave	16	static
+../Core/Src/main.c:457:13:HandleButton	16	static
+../Core/Src/main.c:485:17:ADC1_ReadVrefint_Regular	16	static
+../Core/Src/main.c:496:17:ADC1_ReadTemp_Injected	16	static
+../Core/Src/main.c:507:17:tri_from_phase	24	static
+../Core/Src/main.c:524:13:DWT_Init	4	static
+../Core/Src/main.c:531:13:DWT_Delay_us	24	static,ignoring_inline_asm
+../Core/Src/main.c:543:6:Error_Handler	4	static,ignoring_inline_asm
