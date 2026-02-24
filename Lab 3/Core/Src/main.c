@@ -39,6 +39,15 @@ typedef enum {
 #define DAC_MAX_12B         4095U
 #define DAC_MID_12B         2048U
 
+/* Select which lab part to run (1, 2, 3, 4) */
+#define LAB_PART            1
+
+/* Part 1/2 sine tone settings */
+#define SINE_FS_HZ          16000U
+#define SINE_FREQ_HZ        1000U
+#define SINE_SAMPLES        256U
+#define SINE_CYCLES         ((SINE_FREQ_HZ * SINE_SAMPLES) / SINE_FS_HZ)
+
 /* Recording buffer length:
  * Choose a value that fits in SRAM.
  * Each sample uses:
@@ -88,6 +97,10 @@ static volatile uint8_t g_record_done = 0;
 
 static uint32_t g_last_btn_ms = 0;
 static uint32_t g_last_blink_ms = 0;
+
+/* Part 1/2 sine table */
+static uint32_t g_sine_buf[SINE_SAMPLES];
+static volatile uint32_t g_sine_idx = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -101,6 +114,18 @@ static void MX_DFSDM1_Init(void);
 static uint32_t TIM2_GetClockHz(void);
 static uint32_t DFSDM_GetSampleRateHz(void);
 static void TIM2_SetSampleRateHz(uint32_t fs_hz);
+
+static void GenerateSineTable(void);
+static void StartDacDmaPlayback(uint32_t *buf, uint32_t len, uint32_t fs_hz);
+
+static void App_Init(void);
+static void App_Loop(void);
+static void App_Part1_Init(void);
+static void App_Part1_Loop(void);
+static void App_Part2_Init(void);
+static void App_Part2_Loop(void);
+static void App_Part3_Init(void);
+static void App_Part3_Loop(void);
 
 static void StartRecording(void);
 static void ProcessMicToDacBuffer(void);
@@ -166,20 +191,205 @@ static void TIM2_SetSampleRateHz(uint32_t fs_hz)
   __HAL_TIM_ENABLE(&htim2);
 }
 
-/* Button interrupt: do NOT toggle LED here in Part 3.
- * Just post an event (with debounce), handle in main loop/state machine.
+static void StartDacDmaPlayback(uint32_t *buf, uint32_t len, uint32_t fs_hz)
+{
+  TIM2_SetSampleRateHz(fs_hz);
+
+  /* LED solid ON during playback */
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+
+  (void)HAL_DAC_Stop_DMA(&hdac1, DAC_CHANNEL_1);
+
+  if (HAL_DAC_Start_DMA(&hdac1,
+                        DAC_CHANNEL_1,
+                        buf,
+                        len,
+                        DAC_ALIGN_12B_R) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  g_state = APP_PLAYBACK;
+}
+
+static void GenerateSineTable(void)
+{
+  /* ~2/3 full-scale to reduce clipping into speaker load */
+  const float amp = 1365.0f; /* approx 2/3 of 2047 */
+  const float two_pi = 6.283185307f;
+
+  for (uint32_t i = 0; i < SINE_SAMPLES; i++)
+  {
+    float phase = two_pi * (float)SINE_CYCLES * (float)i / (float)SINE_SAMPLES;
+    float s = sinf(phase);
+    int32_t y = (int32_t)DAC_MID_12B + (int32_t)(s * amp);
+    if (y < 0) y = 0;
+    if (y > (int32_t)DAC_MAX_12B) y = (int32_t)DAC_MAX_12B;
+    g_sine_buf[i] = (uint32_t)(y & 0x0FFF);
+  }
+}
+
+static void App_Init(void)
+{
+#if LAB_PART == 1
+  App_Part1_Init();
+#elif LAB_PART == 2
+  App_Part2_Init();
+#elif LAB_PART == 3
+  App_Part3_Init();
+#elif LAB_PART == 4
+  App_Part3_Init();
+#else
+#error "Unsupported LAB_PART"
+#endif
+}
+
+static void App_Loop(void)
+{
+#if LAB_PART == 1
+  App_Part1_Loop();
+#elif LAB_PART == 2
+  App_Part2_Loop();
+#elif LAB_PART == 3
+  App_Part3_Loop();
+#elif LAB_PART == 4
+  App_Part3_Loop();
+#endif
+}
+
+static void App_Part1_Init(void)
+{
+  GenerateSineTable();
+  g_sine_idx = 0;
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+  if (HAL_DAC_Start(&hdac1, DAC_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  TIM2_SetSampleRateHz(SINE_FS_HZ);
+
+  if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+static void App_Part1_Loop(void)
+{
+  /* Tone driven by TIM2 interrupt */
+}
+
+static void App_Part2_Init(void)
+{
+  GenerateSineTable();
+  StartDacDmaPlayback(g_sine_buf, SINE_SAMPLES, SINE_FS_HZ);
+}
+
+static void App_Part2_Loop(void)
+{
+  /* Tone driven by TIM2 TRGO + DAC DMA */
+}
+
+static void App_Part3_Init(void)
+{
+  /* Start in IDLE with LED off */
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+  g_state = APP_IDLE;
+}
+
+static void App_Part3_Loop(void)
+{
+  /* Handle button press event */
+  if (g_btn_event)
+  {
+    g_btn_event = 0;
+
+    if (g_state == APP_PLAYBACK)
+    {
+      /* Button during playback => start a new recording */
+      StartRecording();
+    }
+    else
+    {
+      /* Button in IDLE or RECORDING => (re)start recording */
+      StartRecording();
+    }
+  }
+
+  /* Blink LED during recording */
+  if (g_state == APP_RECORDING)
+  {
+    uint32_t now = HAL_GetTick();
+    if ((now - g_last_blink_ms) >= LED_BLINK_MS)
+    {
+      g_last_blink_ms = now;
+      HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
+  }
+
+  /* When recording buffer is full: process + start playback automatically */
+  if ((g_state == APP_RECORDING) && g_record_done)
+  {
+    g_record_done = 0;
+
+    /* Stop recording DMA */
+    (void)HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
+
+    /* Convert mic data -> DAC format */
+    ProcessMicToDacBuffer();
+
+    /* Start playback */
+    StartPlayback();
+  }
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+#if LAB_PART == 1
+  if (htim->Instance == TIM2)
+  {
+    uint32_t val = g_sine_buf[g_sine_idx++];
+    if (g_sine_idx >= SINE_SAMPLES)
+    {
+      g_sine_idx = 0;
+    }
+    (void)HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, val);
+  }
+#else
+  (void)htim;
+#endif
+}
+
+/* Button interrupt:
+ * Part 1: toggle LED in ISR
+ * Part 3: post a debounced event
  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if (GPIO_Pin == GPIO_PIN_13)
+  if (GPIO_Pin != GPIO_PIN_13)
   {
-    uint32_t now = HAL_GetTick();
-    if ((now - g_last_btn_ms) > BTN_DEBOUNCE_MS)
-    {
-      g_last_btn_ms = now;
-      g_btn_event = 1;
-    }
+    return;
   }
+
+#if LAB_PART == 1
+  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+#elif (LAB_PART == 3) || (LAB_PART == 4)
+  uint32_t now = HAL_GetTick();
+  if ((now - g_last_btn_ms) > BTN_DEBOUNCE_MS)
+  {
+    g_last_btn_ms = now;
+    g_btn_event = 1;
+  }
+#else
+  /* No action for other parts */
+#endif
 }
 
 /* DFSDM: record buffer complete callback */
@@ -257,32 +467,11 @@ static void StartPlayback(void)
 
   /* Match TIM2 sample rate to DFSDM sample rate */
   uint32_t fs = DFSDM_GetSampleRateHz();
-  TIM2_SetSampleRateHz(fs);
-
-  /* LED solid ON during playback */
-  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-
   /* Start DAC DMA from recorded audio buffer.
    * IMPORTANT: Your DAC DMA should be configured as CIRCULAR if you want continuous looping
    * until next button press (as the lab requests).
    */
-  (void)HAL_DAC_Stop_DMA(&hdac1, DAC_CHANNEL_1);
-
-  if (HAL_DAC_Start_DMA(&hdac1,
-                        DAC_CHANNEL_1,
-                        g_dac_buf,
-                        AUDIO_BUF_LEN,
-                        DAC_ALIGN_12B_R) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  g_state = APP_PLAYBACK;
+  StartDacDmaPlayback(g_dac_buf, AUDIO_BUF_LEN, fs);
 }
 
 /* Stop playback: stop DAC DMA and timer, LED off (unless recording blinking) */
@@ -334,57 +523,14 @@ int main(void)
   MX_TIM2_Init();
   MX_DFSDM1_Init();
   /* USER CODE BEGIN 2 */
-  /* Start in IDLE with LED off */
-    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-    g_state = APP_IDLE;
+  App_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  /* Handle button press event */
-	     if (g_btn_event)
-	     {
-	       g_btn_event = 0;
-
-	       if (g_state == APP_PLAYBACK)
-	       {
-	         /* Button during playback => start a new recording */
-	         StartRecording();
-	       }
-	       else
-	       {
-	         /* Button in IDLE or RECORDING => (re)start recording */
-	         StartRecording();
-	       }
-	     }
-
-	     /* Blink LED during recording */
-	     if (g_state == APP_RECORDING)
-	     {
-	       uint32_t now = HAL_GetTick();
-	       if ((now - g_last_blink_ms) >= LED_BLINK_MS)
-	       {
-	         g_last_blink_ms = now;
-	         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	       }
-	     }
-
-	     /* When recording buffer is full: process + start playback automatically */
-	     if ((g_state == APP_RECORDING) && g_record_done)
-	     {
-	       g_record_done = 0;
-
-	       /* Stop recording DMA */
-	       (void)HAL_DFSDM_FilterRegularStop_DMA(&hdfsdm1_filter0);
-
-	       /* Convert mic data -> DAC format */
-	       ProcessMicToDacBuffer();
-
-	       /* Start playback */
-	       StartPlayback();
-	     }
+    App_Loop();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
