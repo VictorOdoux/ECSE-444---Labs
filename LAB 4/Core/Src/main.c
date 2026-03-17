@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "i2c.h"
+#include "octospi.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -33,6 +34,7 @@
 #include "stm32l4s5i_iot01_magneto.h"
 #include "stm32l4s5i_iot01_accelero.h"
 #include "stm32l4s5i_iot01_psensor.h"
+#include "lab4_flash.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -223,9 +225,43 @@ int main(void)
   MX_GPIO_Init();
   MX_I2C2_Init();
   MX_USART1_UART_Init();
+  MX_OCTOSPI1_Init();
   /* USER CODE BEGIN 2 */
   const char *msg = "UART alive\r\n";
   HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+
+  /* Part 3 uses a small reusable flash wrapper instead of calling the BSP
+   * directly from main(). That keeps the board-specific QSPI details in one
+   * place and makes Part 4 logging code easier to build on top later. */
+  if (Lab4Flash_Init() != LAB4_FLASH_STATUS_OK)
+  {
+    const char *flashInitError = "QSPI init failed\r\n";
+    HAL_UART_Transmit(&huart1, (uint8_t *)flashInitError, (uint16_t)strlen(flashInitError), 100);
+    Error_Handler();
+  }
+
+  if (Lab4Flash_RunSelfTest() != LAB4_FLASH_STATUS_OK)
+  {
+    const char *flashTestError = "QSPI erase/write/read test failed\r\n";
+    HAL_UART_Transmit(&huart1, (uint8_t *)flashTestError, (uint16_t)strlen(flashTestError), 100);
+    Error_Handler();
+  }
+  else
+  {
+    const QSPI_Info *flashInfo = Lab4Flash_GetInfo();
+    char flashReadyMsg[96];
+    int flashReadyLen = snprintf(flashReadyMsg, sizeof(flashReadyMsg),
+                                 "QSPI ready. Flash=%luB, page=%luB, log start=0x%06lX\r\n",
+                                 (unsigned long)flashInfo->FlashSize,
+                                 (unsigned long)flashInfo->ProgPageSize,
+                                 (unsigned long)LAB4_FLASH_LOG_START_ADDRESS);
+
+    if (flashReadyLen > 0)
+    {
+      HAL_UART_Transmit(&huart1, (uint8_t *)flashReadyMsg, (uint16_t)flashReadyLen, 100);
+    }
+  }
+
   Sensors_Init();
 
    const char *startupMsg =

@@ -26,6 +26,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_flash_ramfunc.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c_ex.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_ospi.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
@@ -49,9 +50,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
- ../Core/Inc/i2c.h ../Core/Inc/main.h ../Core/Inc/usart.h \
- ../Core/Inc/gpio.h ../Core/Inc/stm32l4s5i_iot01_hsensor.h \
- ../Core/Inc/stm32l4s5i_iot01.h \
+ ../Core/Inc/i2c.h ../Core/Inc/main.h ../Core/Inc/octospi.h \
+ ../Core/Inc/usart.h ../Core/Inc/gpio.h \
+ ../Core/Inc/stm32l4s5i_iot01_hsensor.h ../Core/Inc/stm32l4s5i_iot01.h \
  C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h \
  C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h \
  C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h \
@@ -65,7 +66,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/stm32l4s5i_iot01_psensor.h \
  C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h \
  C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h \
- C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h \
+ ../Core/Inc/lab4_flash.h ../Core/Inc/stm32l4s5i_iot01_qspi.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/mx25r6435f/mx25r6435f.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -94,6 +97,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_flash_ramfunc.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c_ex.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_ospi.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h:
@@ -119,6 +123,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
 ../Core/Inc/i2c.h:
 ../Core/Inc/main.h:
+../Core/Inc/octospi.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/gpio.h:
 ../Core/Inc/stm32l4s5i_iot01_hsensor.h:
@@ -137,3 +142,6 @@ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Com
 C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h:
 C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h:
 C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h:
+../Core/Inc/lab4_flash.h:
+../Core/Inc/stm32l4s5i_iot01_qspi.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/mx25r6435f/mx25r6435f.h:

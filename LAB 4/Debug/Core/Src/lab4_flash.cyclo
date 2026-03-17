@@ -1,0 +1,7 @@
+../Core/Src/lab4_flash.c:12:26:Lab4Flash_CheckRange	5
+../Core/Src/lab4_flash.c:35:19:Lab4Flash_Init	3
+../Core/Src/lab4_flash.c:55:19:Lab4Flash_EraseBlock	4
+../Core/Src/lab4_flash.c:82:19:Lab4Flash_Write	5
+../Core/Src/lab4_flash.c:107:19:Lab4Flash_Read	5
+../Core/Src/lab4_flash.c:130:19:Lab4Flash_RunSelfTest	10
+../Core/Src/lab4_flash.c:196:18:Lab4Flash_GetInfo	2
