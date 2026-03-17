@@ -28,23 +28,44 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
- ../Core/Inc/stm32l4s5i_iot01_hsensor.h ../Core/Inc/stm32l4s5i_iot01.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
+ ../Core/Inc/FreeRTOSConfig.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h \
+ ../Core/Inc/i2c.h ../Core/Inc/main.h ../Core/Inc/usart.h \
+ ../Core/Inc/gpio.h ../Core/Inc/stm32l4s5i_iot01_hsensor.h \
+ ../Core/Inc/stm32l4s5i_iot01.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h \
  ../Core/Inc/stm32l4s5i_iot01_magneto.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lis3mdl/lis3mdl.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lis3mdl/../Common/magneto.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lis3mdl/lis3mdl.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lis3mdl/../Common/magneto.h \
  ../Core/Inc/stm32l4s5i_iot01_accelero.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/lsm6dsl.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/../Common/accelero.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/../Common/gyro.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/lsm6dsl.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/../Common/accelero.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/../Common/gyro.h \
  ../Core/Inc/stm32l4s5i_iot01_psensor.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h
 ../Core/Inc/main.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
 ../Core/Inc/stm32l4xx_hal_conf.h:
@@ -75,21 +96,44 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
+../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
+../Core/Inc/FreeRTOSConfig.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h:
+../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/event_groups.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/timers.h:
+../Core/Inc/i2c.h:
+../Core/Inc/main.h:
+../Core/Inc/usart.h:
+../Core/Inc/gpio.h:
 ../Core/Inc/stm32l4s5i_iot01_hsensor.h:
 ../Core/Inc/stm32l4s5i_iot01.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h:
 ../Core/Inc/stm32l4s5i_iot01_magneto.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lis3mdl/lis3mdl.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lis3mdl/../Common/magneto.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lis3mdl/lis3mdl.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lis3mdl/../Common/magneto.h:
 ../Core/Inc/stm32l4s5i_iot01_accelero.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/lsm6dsl.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/../Common/accelero.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/../Common/gyro.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/lsm6dsl.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/../Common/accelero.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lsm6dsl/../Common/gyro.h:
 ../Core/Inc/stm32l4s5i_iot01_psensor.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h:

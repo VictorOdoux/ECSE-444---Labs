@@ -35,6 +35,11 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+/* These delays control how often each Part 2 task wakes up. All three tasks
+ * use the same priority, so osDelay() is what spaces their execution out. */
+#define SENSOR_TASK_PERIOD_MS  100U
+#define UART_TASK_PERIOD_MS    100U
+#define BUTTON_TASK_PERIOD_MS   20U
 
 /* USER CODE END PD */
 
@@ -47,14 +52,18 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-osThreadId defaultTaskHandle;
+osThreadId sensorTaskHandle;
+osThreadId uartTaskHandle;
+osThreadId buttonTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const * argument);
+void StartSensorTask(void const * argument);
+void StartUartTask(void const * argument);
+void StartButtonTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -101,9 +110,17 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
-  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  /* definition and creation of sensorTask */
+  osThreadDef(sensorTask, StartSensorTask, osPriorityNormal, 0, 128);
+  sensorTaskHandle = osThreadCreate(osThread(sensorTask), NULL);
+
+  /* definition and creation of uartTask */
+  osThreadDef(uartTask, StartUartTask, osPriorityNormal, 0, 256);
+  uartTaskHandle = osThreadCreate(osThread(uartTask), NULL);
+
+  /* definition and creation of buttonTask */
+  osThreadDef(buttonTask, StartButtonTask, osPriorityNormal, 0, 128);
+  buttonTaskHandle = osThreadCreate(osThread(buttonTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -111,22 +128,67 @@ void MX_FREERTOS_Init(void) {
 
 }
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartSensorTask */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Function implementing the sensorTask thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const * argument)
+/* USER CODE END Header_StartSensorTask */
+void StartSensorTask(void const * argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
+  /* USER CODE BEGIN StartSensorTask */
+  /* This task is responsible only for refreshing the latest sensor values.
+   * The UART task and button task then use that shared state. */
   for(;;)
   {
-    osDelay(1);
+    /* Keep the delay near the top of the loop. This yields the CPU back to the
+     * scheduler so the other ready tasks can run before the next sample. */
+    osDelay(SENSOR_TASK_PERIOD_MS);
+    Sensors_ReadAll();
   }
-  /* USER CODE END StartDefaultTask */
+  /* USER CODE END StartSensorTask */
+}
+
+/* USER CODE BEGIN Header_StartUartTask */
+/**
+* @brief Function implementing the uartTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartUartTask */
+void StartUartTask(void const * argument)
+{
+  /* USER CODE BEGIN StartUartTask */
+  /* This task formats and transmits the currently selected sensor value.
+   * Keeping UART output in its own task makes it easier to change the print
+   * rate without touching sensor acquisition or button handling. */
+  for(;;)
+  {
+    osDelay(UART_TASK_PERIOD_MS);
+    UART_SendSelectedSensor();
+  }
+  /* USER CODE END StartUartTask */
+}
+
+/* USER CODE BEGIN Header_StartButtonTask */
+/**
+* @brief Function implementing the buttonTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartButtonTask */
+void StartButtonTask(void const * argument)
+{
+  /* USER CODE BEGIN StartButtonTask */
+  /* This task polls the blue pushbutton and advances the display mode.
+   * Handle_Button() contains the debounce logic so one press changes mode once. */
+  for(;;)
+  {
+    osDelay(BUTTON_TASK_PERIOD_MS);
+    Handle_Button();
+  }
+  /* USER CODE END StartButtonTask */
 }
 
 /* Private application code --------------------------------------------------*/

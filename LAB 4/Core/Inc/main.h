@@ -53,6 +53,13 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+/* These helpers keep the Lab 4 application logic in one place.
+ * freertos.c decides when each piece runs, while main.c keeps the actual
+ * sensor, button, and UART work easy to find. */
+void Sensors_Init(void);
+void Sensors_ReadAll(void);
+void Handle_Button(void);
+void UART_SendSelectedSensor(void);
 
 /* USER CODE END EFP */
 

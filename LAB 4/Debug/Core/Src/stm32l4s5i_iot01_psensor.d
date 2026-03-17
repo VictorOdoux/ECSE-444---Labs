@@ -30,11 +30,13 @@ Core/Src/stm32l4s5i_iot01_psensor.o: \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h \
- C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h \
+ C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h
 ../Core/Inc/stm32l4s5i_iot01_psensor.h:
 ../Core/Inc/stm32l4s5i_iot01.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
@@ -66,8 +68,10 @@ Core/Src/stm32l4s5i_iot01_psensor.o: \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_i2c_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_pwr_ex.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h:
-C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/lps22hb.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/psensor.h:
+C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/lps22hb/../Common/tsensor.h:

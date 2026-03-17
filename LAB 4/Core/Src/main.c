@@ -62,6 +62,10 @@ typedef enum
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+/* These variables are shared by the RTOS tasks in Part 2:
+ * - sensorTask updates the latest measurements
+ * - buttonTask updates which sensor should be displayed
+ * - uartTask reads the current selection and prints it */
 static char uartBuf[128];
 
 static DisplayMode_t displayMode = DISPLAY_HUMIDITY;
@@ -79,15 +83,11 @@ static GPIO_PinState lastButtonState = GPIO_PIN_SET;
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-static void Sensors_Init(void);
-static void Sensors_ReadAll(void);
-static void Handle_Button(void);
-static void UART_SendSelectedSensor(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static void Sensors_Init(void)
+void Sensors_Init(void)
 {
   if (BSP_HSENSOR_Init() != 0U)
   {
@@ -110,7 +110,7 @@ static void Sensors_Init(void)
   }
 }
 
-static void Sensors_ReadAll(void)
+void Sensors_ReadAll(void)
 {
   /* HTS221: humidity */
   humidity_pct = BSP_HSENSOR_ReadHumidity();
@@ -125,7 +125,7 @@ static void Sensors_ReadAll(void)
   pressure_hPa = BSP_PSENSOR_ReadPressure();
 }
 
-static void Handle_Button(void)
+void Handle_Button(void)
 {
   GPIO_PinState currentButtonState = HAL_GPIO_ReadPin(USER_BUTTON_PORT, USER_BUTTON_PIN);
 
@@ -134,22 +134,25 @@ static void Handle_Button(void)
   {
     displayMode = (DisplayMode_t)((displayMode + 1) % DISPLAY_COUNT);
 
-    /* simple debounce */
-    HAL_Delay(20);
+    /* In Part 2 this function runs inside buttonTask, so we use osDelay()
+     * instead of HAL_Delay() to let the scheduler run the other tasks while
+     * the switch signal settles. */
+    osDelay(20);
     while (HAL_GPIO_ReadPin(USER_BUTTON_PORT, USER_BUTTON_PIN) == GPIO_PIN_RESET)
     {
-      HAL_Delay(5);
+      osDelay(5);
     }
   }
 
   lastButtonState = HAL_GPIO_ReadPin(USER_BUTTON_PORT, USER_BUTTON_PIN);
 }
 
-static void UART_SendSelectedSensor(void)
+void UART_SendSelectedSensor(void)
 {
   int len = 0;
 
-  /* Cast floats to int for easy UART printing in Part 1 */
+  /* The lab handout notes that float formatting can be troublesome when
+   * FreeRTOS is enabled, so the scalar sensor values are printed as ints. */
   switch (displayMode)
   {
     case DISPLAY_HUMIDITY:
@@ -242,14 +245,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  Sensors_ReadAll();
-	  UART_SendSelectedSensor();
-
-	      for (int i = 0; i < 10; i++)
-	      {
-	          Handle_Button();
-	          HAL_Delay(10);
-	      }
+    /* After osKernelStart(), application flow is owned by the RTOS scheduler.
+     * Reaching this loop would mean the scheduler did not take control. */
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
