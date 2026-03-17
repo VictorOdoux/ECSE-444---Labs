@@ -35,9 +35,9 @@ Core/Src/stm32l4s5i_iot01_tsensor.o: \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
- C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h \
- C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h \
- C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h
+ C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h \
+ C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h \
+ C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h
 ../Core/Inc/stm32l4s5i_iot01_tsensor.h:
 ../Core/Inc/stm32l4s5i_iot01.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:
@@ -74,6 +74,6 @@ Core/Src/stm32l4s5i_iot01_tsensor.o: \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
-C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h:
-C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h:
-C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h:
+C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/hts221.h:
+C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/hsensor.h:
+C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/../Components/hts221/../Common/tsensor.h:

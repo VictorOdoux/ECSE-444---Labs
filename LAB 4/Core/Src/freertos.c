@@ -25,7 +25,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "usart.h"
+#include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,7 +52,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+static uint32_t g_sensorTaskLoops = 0U;
+static uint32_t g_uartTaskLoops   = 0U;
+static uint32_t g_buttonTaskLoops = 0U;
 /* USER CODE END Variables */
 osThreadId sensorTaskHandle;
 osThreadId uartTaskHandle;
@@ -58,7 +62,7 @@ osThreadId buttonTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+static void DebugPrint(const char *msg);
 /* USER CODE END FunctionPrototypes */
 
 void StartSensorTask(void const * argument);
@@ -90,7 +94,7 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+	 DebugPrint("[RTOS] creating tasks\r\n");
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -109,18 +113,45 @@ void MX_FREERTOS_Init(void) {
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
-  /* Create the thread(s) */
-  /* definition and creation of sensorTask */
-  osThreadDef(sensorTask, StartSensorTask, osPriorityNormal, 0, 128);
-  sensorTaskHandle = osThreadCreate(osThread(sensorTask), NULL);
+	  /* Create the thread(s) */
+	  /* definition and creation of sensorTask */
+	  osThreadDef(sensorTask, StartSensorTask, osPriorityNormal, 0, 384);
+	  sensorTaskHandle = osThreadCreate(osThread(sensorTask), NULL);
 
-  /* definition and creation of uartTask */
-  osThreadDef(uartTask, StartUartTask, osPriorityNormal, 0, 256);
-  uartTaskHandle = osThreadCreate(osThread(uartTask), NULL);
+	  if (sensorTaskHandle == NULL)
+	  {
+	    DebugPrint("[RTOS] sensorTask create FAILED\r\n");
+	  }
+	  else
+	  {
+	    DebugPrint("[RTOS] sensorTask create OK\r\n");
+	  }
 
-  /* definition and creation of buttonTask */
-  osThreadDef(buttonTask, StartButtonTask, osPriorityNormal, 0, 128);
-  buttonTaskHandle = osThreadCreate(osThread(buttonTask), NULL);
+	  /* definition and creation of uartTask */
+	  osThreadDef(uartTask, StartUartTask, osPriorityNormal, 0, 128);
+	  uartTaskHandle = osThreadCreate(osThread(uartTask), NULL);
+
+	  if (uartTaskHandle == NULL)
+	  {
+	    DebugPrint("[RTOS] uartTask create FAILED\r\n");
+	  }
+	  else
+	  {
+	    DebugPrint("[RTOS] uartTask create OK\r\n");
+	  }
+
+	  /* definition and creation of buttonTask */
+	  osThreadDef(buttonTask, StartButtonTask, osPriorityNormal, 0, 128);
+	  buttonTaskHandle = osThreadCreate(osThread(buttonTask), NULL);
+
+	  if (buttonTaskHandle == NULL)
+	  {
+	    DebugPrint("[RTOS] buttonTask create FAILED\r\n");
+	  }
+	  else
+	  {
+	    DebugPrint("[RTOS] buttonTask create OK\r\n");
+	  }
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -138,6 +169,7 @@ void MX_FREERTOS_Init(void) {
 void StartSensorTask(void const * argument)
 {
   /* USER CODE BEGIN StartSensorTask */
+	DebugPrint("[sensorTask] started\r\n");
   /* This task is responsible only for refreshing the latest sensor values.
    * The UART task and button task then use that shared state. */
   for(;;)
@@ -146,7 +178,8 @@ void StartSensorTask(void const * argument)
      * scheduler so the other ready tasks can run before the next sample. */
     osDelay(SENSOR_TASK_PERIOD_MS);
     Sensors_ReadAll();
-  }
+    g_sensorTaskLoops++;
+    }
   /* USER CODE END StartSensorTask */
 }
 
@@ -160,6 +193,7 @@ void StartSensorTask(void const * argument)
 void StartUartTask(void const * argument)
 {
   /* USER CODE BEGIN StartUartTask */
+	DebugPrint("[uartTask] started\r\n");
   /* This task formats and transmits the currently selected sensor value.
    * Keeping UART output in its own task makes it easier to change the print
    * rate without touching sensor acquisition or button handling. */
@@ -167,6 +201,7 @@ void StartUartTask(void const * argument)
   {
     osDelay(UART_TASK_PERIOD_MS);
     UART_SendSelectedSensor();
+    g_uartTaskLoops++;
   }
   /* USER CODE END StartUartTask */
 }
@@ -181,17 +216,25 @@ void StartUartTask(void const * argument)
 void StartButtonTask(void const * argument)
 {
   /* USER CODE BEGIN StartButtonTask */
+	DebugPrint("[buttonTask] started\r\n");
   /* This task polls the blue pushbutton and advances the display mode.
    * Handle_Button() contains the debounce logic so one press changes mode once. */
   for(;;)
   {
     osDelay(BUTTON_TASK_PERIOD_MS);
     Handle_Button();
+    g_buttonTaskLoops++;
   }
   /* USER CODE END StartButtonTask */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+static void DebugPrint(const char *msg)
+{
+  if (msg != NULL)
+  {
+    HAL_UART_Transmit(&huart1, (uint8_t *)msg, (uint16_t)strlen(msg), 100);
+  }
+}
 /* USER CODE END Application */

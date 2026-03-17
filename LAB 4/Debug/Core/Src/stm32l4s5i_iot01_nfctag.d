@@ -34,8 +34,8 @@ Core/Src/stm32l4s5i_iot01_nfctag.o: ../Core/Src/stm32l4s5i_iot01_nfctag.c \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h \
- C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/st25dv/st25dv.h \
- C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/st25dv/st25dv_reg.h \
+ C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/st25dv/st25dv.h \
+ C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/st25dv/st25dv_reg.h \
  ../Drivers/CMSIS/Include/cmsis_compiler.h
 ../Core/Inc/stm32l4s5i_iot01_nfctag.h:
 ../Core/Inc/stm32l4s5i_iot01.h:
@@ -73,6 +73,6 @@ Core/Src/stm32l4s5i_iot01_nfctag.o: ../Core/Src/stm32l4s5i_iot01_nfctag.c \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_tim_ex.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_uart_ex.h:
-C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/st25dv/st25dv.h:
-C:/Users/Admin/Documents/GitHub/ECSE-444---Labs/LAB\ 4/Drivers/Components/st25dv/st25dv_reg.h:
+C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/st25dv/st25dv.h:
+C:/Users/victo/Documents/ECSE\ 321/ECSE-444---Labs/LAB\ 4/Drivers/Components/st25dv/st25dv_reg.h:
 ../Drivers/CMSIS/Include/cmsis_compiler.h:

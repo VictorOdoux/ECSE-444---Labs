@@ -45,8 +45,34 @@ typedef enum
   DISPLAY_MAGNETO,
   DISPLAY_ACCELERO,
   DISPLAY_PRESSURE,
+  DISPLAY_STATS,
   DISPLAY_COUNT
 } DisplayMode_t;
+
+typedef enum
+{
+  LOG_SENSOR_HUMIDITY = 0,
+  LOG_SENSOR_MAGNETO_X,
+  LOG_SENSOR_ACCELERO_X,
+  LOG_SENSOR_PRESSURE,
+  LOG_SENSOR_COUNT
+} LoggedSensorId_t;
+
+typedef struct
+{
+  uint32_t sampleIndex;
+  uint32_t sensorId;
+  int32_t value;
+} LogRecord_t;
+
+typedef struct
+{
+  uint32_t count;
+  int64_t  sum;
+  uint64_t sumSq;
+  int32_t  mean;
+  int32_t  variance;
+} SensorStats_t;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -54,6 +80,13 @@ typedef enum
 /* Blue user button B2 on the B-L4S5I-IOT01A board */
 #define USER_BUTTON_PORT GPIOC
 #define USER_BUTTON_PIN  GPIO_PIN_13
+
+#define PART4_LOG_BUFFER_RECORDS  16U
+#define PART4_READ_CHUNK_RECORDS  4U
+
+#ifndef MX25R6435F_BLOCK_SIZE
+#define MX25R6435F_BLOCK_SIZE     0x00010000UL
+#endif
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,7 +101,7 @@ typedef enum
  * - sensorTask updates the latest measurements
  * - buttonTask updates which sensor should be displayed
  * - uartTask reads the current selection and prints it */
-static char uartBuf[128];
+static char uartBuf[384];
 
 static DisplayMode_t displayMode = DISPLAY_HUMIDITY;
 
@@ -79,16 +112,342 @@ static int16_t accXYZ[3] = {0};       /* LSM6DSL */
 static float pressure_hPa = 0.0f;     /* LPS22HB */
 
 static GPIO_PinState lastButtonState = GPIO_PIN_SET;
+
+/* Part 4 logging / statistics state */
+static LogRecord_t  s_logBuffer[PART4_LOG_BUFFER_RECORDS];
+static LogRecord_t  s_readChunk[PART4_READ_CHUNK_RECORDS];
+static uint32_t     s_logBufferCount = 0U;
+static uint32_t     s_sampleSequence = 0U;
+static uint32_t     s_totalLoggedRecords = 0U;
+
+static uint32_t     s_flashWriteAddress = LAB4_FLASH_LOG_START_ADDRESS;
+static uint32_t     s_flashErasedLimitAddress = LAB4_FLASH_LOG_START_ADDRESS;
+static uint32_t     s_flashLimitAddress = 0U;
+static uint8_t      s_loggingEnabled = 0U;
+static uint8_t      s_statsDirty = 1U;
+
+static SensorStats_t s_stats[LOG_SENSOR_COUNT];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
+static Lab4FlashStatus_t Part4_InitLogging(void);
+static void Part4_ResetStats(void);
+static int32_t Part4_GetHumidityForLog(void);
+static int32_t Part4_GetMagnetoXForLog(void);
+static int32_t Part4_GetAcceleroXForLog(void);
+static int32_t Part4_GetPressureForLog(void);
+static void Part4_LogAppendRecord(uint32_t sampleIndex, LoggedSensorId_t sensorId, int32_t value);
+static Lab4FlashStatus_t Part4_EnsureLogCapacity(uint32_t bytesNeeded);
+static Lab4FlashStatus_t Part4_FlushLogBuffer(void);
+static void Part4_LogCurrentSamples(void);
+static void Part4_AccumulateRecord(const LogRecord_t *record);
+static void Part4_FinalizeStats(void);
+static Lab4FlashStatus_t Part4_RecomputeStatsFromFlash(void);
+static void Part4_UpdateStatsIfNeeded(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static void Part4_ResetStats(void)
+{
+  uint32_t i;
+
+  for (i = 0U; i < LOG_SENSOR_COUNT; ++i)
+  {
+    s_stats[i].count = 0U;
+    s_stats[i].sum = 0;
+    s_stats[i].sumSq = 0U;
+    s_stats[i].mean = 0;
+    s_stats[i].variance = 0;
+  }
+}
+
+static Lab4FlashStatus_t Part4_InitLogging(void)
+{
+  const QSPI_Info *flashInfo;
+  Lab4FlashStatus_t status;
+
+  flashInfo = Lab4Flash_GetInfo();
+  if (flashInfo == NULL)
+  {
+    return LAB4_FLASH_STATUS_NOT_INITIALIZED;
+  }
+
+  s_flashLimitAddress = flashInfo->FlashSize;
+  s_flashWriteAddress = LAB4_FLASH_LOG_START_ADDRESS;
+  s_flashErasedLimitAddress = LAB4_FLASH_LOG_START_ADDRESS;
+  s_logBufferCount = 0U;
+  s_sampleSequence = 0U;
+  s_totalLoggedRecords = 0U;
+  s_loggingEnabled = 0U;
+  s_statsDirty = 1U;
+
+  Part4_ResetStats();
+
+  status = Lab4Flash_EraseBlock(LAB4_FLASH_LOG_START_ADDRESS);
+  if (status != LAB4_FLASH_STATUS_OK)
+  {
+    return status;
+  }
+
+  s_flashErasedLimitAddress = LAB4_FLASH_LOG_START_ADDRESS + MX25R6435F_BLOCK_SIZE;
+  s_loggingEnabled = 1U;
+
+  return LAB4_FLASH_STATUS_OK;
+}
+
+static int32_t Part4_GetHumidityForLog(void)
+{
+  return (int32_t)humidity_pct;
+}
+
+static int32_t Part4_GetMagnetoXForLog(void)
+{
+  return (int32_t)magXYZ[0];
+}
+
+static int32_t Part4_GetAcceleroXForLog(void)
+{
+  return (int32_t)accXYZ[0];
+}
+
+static int32_t Part4_GetPressureForLog(void)
+{
+  return (int32_t)pressure_hPa;
+}
+
+static void Part4_LogAppendRecord(uint32_t sampleIndex, LoggedSensorId_t sensorId, int32_t value)
+{
+  if ((s_loggingEnabled == 0U) || (s_logBufferCount >= PART4_LOG_BUFFER_RECORDS))
+  {
+    return;
+  }
+
+  s_logBuffer[s_logBufferCount].sampleIndex = sampleIndex;
+  s_logBuffer[s_logBufferCount].sensorId = (uint32_t)sensorId;
+  s_logBuffer[s_logBufferCount].value = value;
+  s_logBufferCount++;
+}
+
+static Lab4FlashStatus_t Part4_EnsureLogCapacity(uint32_t bytesNeeded)
+{
+  Lab4FlashStatus_t status;
+
+  if ((s_flashWriteAddress + bytesNeeded) > s_flashLimitAddress)
+  {
+    return LAB4_FLASH_STATUS_RANGE_ERROR;
+  }
+
+  while ((s_flashWriteAddress + bytesNeeded) > s_flashErasedLimitAddress)
+  {
+    if (s_flashErasedLimitAddress >= s_flashLimitAddress)
+    {
+      return LAB4_FLASH_STATUS_RANGE_ERROR;
+    }
+
+    status = Lab4Flash_EraseBlock(s_flashErasedLimitAddress);
+    if (status != LAB4_FLASH_STATUS_OK)
+    {
+      return status;
+    }
+
+    s_flashErasedLimitAddress += MX25R6435F_BLOCK_SIZE;
+  }
+
+  return LAB4_FLASH_STATUS_OK;
+}
+
+static Lab4FlashStatus_t Part4_FlushLogBuffer(void)
+{
+  Lab4FlashStatus_t status;
+  uint32_t bytesToWrite;
+
+  if (s_logBufferCount == 0U)
+  {
+    return LAB4_FLASH_STATUS_OK;
+  }
+
+  bytesToWrite = s_logBufferCount * sizeof(LogRecord_t);
+  /* REMOVE for demo
+  char dbg[96];
+  int dbgLen = snprintf(dbg, sizeof(dbg),
+                        "[flash] flush count=%lu bytes=%lu addr=0x%06lX\r\n",
+                        (unsigned long)s_logBufferCount,
+                        (unsigned long)bytesToWrite,
+                        (unsigned long)s_flashWriteAddress);
+  if (dbgLen > 0)
+  {
+    HAL_UART_Transmit(&huart1, (uint8_t *)dbg, (uint16_t)dbgLen, 100);
+  }
+  */
+
+  status = Part4_EnsureLogCapacity(bytesToWrite);
+  if (status != LAB4_FLASH_STATUS_OK)
+  {
+    s_loggingEnabled = 0U;
+    return status;
+  }
+
+  status = Lab4Flash_Write(s_flashWriteAddress, (const uint8_t *)s_logBuffer, bytesToWrite);
+  if (status != LAB4_FLASH_STATUS_OK)
+  {
+    s_loggingEnabled = 0U;
+    return status;
+  }
+
+  s_flashWriteAddress += bytesToWrite;
+  s_totalLoggedRecords += s_logBufferCount;
+  s_logBufferCount = 0U;
+  s_statsDirty = 1U;
+
+  return LAB4_FLASH_STATUS_OK;
+}
+
+static void Part4_LogCurrentSamples(void)
+{
+  uint32_t currentSample;
+
+  if (s_loggingEnabled == 0U)
+  {
+    return;
+  }
+
+  currentSample = s_sampleSequence++;
+  Part4_LogAppendRecord(currentSample, LOG_SENSOR_HUMIDITY,   Part4_GetHumidityForLog());
+  Part4_LogAppendRecord(currentSample, LOG_SENSOR_MAGNETO_X,  Part4_GetMagnetoXForLog());
+  Part4_LogAppendRecord(currentSample, LOG_SENSOR_ACCELERO_X, Part4_GetAcceleroXForLog());
+  Part4_LogAppendRecord(currentSample, LOG_SENSOR_PRESSURE,   Part4_GetPressureForLog());
+
+  if (s_logBufferCount >= PART4_LOG_BUFFER_RECORDS)
+  {
+    if (Part4_FlushLogBuffer() != LAB4_FLASH_STATUS_OK)
+    {
+      Error_Handler();
+    }
+  }
+}
+
+static void Part4_AccumulateRecord(const LogRecord_t *record)
+{
+  SensorStats_t *stats;
+  int64_t value64;
+
+  if ((record == NULL) || (record->sensorId >= LOG_SENSOR_COUNT))
+  {
+    return;
+  }
+
+  stats = &s_stats[record->sensorId];
+  value64 = (int64_t)record->value;
+
+  stats->count++;
+  stats->sum += value64;
+  stats->sumSq += (uint64_t)(value64 * value64);
+}
+
+static void Part4_FinalizeStats(void)
+{
+  uint32_t i;
+
+  for (i = 0U; i < LOG_SENSOR_COUNT; ++i)
+  {
+    if (s_stats[i].count > 0U)
+    {
+      int64_t meanSquared;
+      int64_t varianceTerm;
+
+      s_stats[i].mean = (int32_t)(s_stats[i].sum / (int64_t)s_stats[i].count);
+
+      meanSquared = (int64_t)s_stats[i].mean * (int64_t)s_stats[i].mean;
+      varianceTerm = ((int64_t)(s_stats[i].sumSq / s_stats[i].count)) - meanSquared;
+
+      if (varianceTerm < 0)
+      {
+        varianceTerm = 0;
+      }
+
+      s_stats[i].variance = (int32_t)varianceTerm;
+    }
+    else
+    {
+      s_stats[i].mean = 0;
+      s_stats[i].variance = 0;
+    }
+  }
+}
+
+static Lab4FlashStatus_t Part4_RecomputeStatsFromFlash(void)
+{
+  Lab4FlashStatus_t status;
+  uint32_t address;
+  uint32_t remainingRecords;
+
+  /* REMOVE for demo
+  const char *msg = "[stats] recompute start\r\n";
+  HAL_UART_Transmit(&huart1, (uint8_t *)msg, (uint16_t)strlen(msg), 100);
+  */
+
+  status = Part4_FlushLogBuffer();
+  if (status != LAB4_FLASH_STATUS_OK)
+  {
+    return status;
+  }
+
+  Part4_ResetStats();
+
+  address = LAB4_FLASH_LOG_START_ADDRESS;
+  remainingRecords = s_totalLoggedRecords;
+
+  while (remainingRecords > 0U)
+  {
+    uint32_t i;
+    uint32_t chunkRecords = (remainingRecords > PART4_READ_CHUNK_RECORDS) ?
+                            PART4_READ_CHUNK_RECORDS : remainingRecords;
+    uint32_t chunkBytes = chunkRecords * sizeof(LogRecord_t);
+
+    status = Lab4Flash_Read(address, (uint8_t *)s_readChunk, chunkBytes);
+    if (status != LAB4_FLASH_STATUS_OK)
+    {
+      return status;
+    }
+
+    for (i = 0U; i < chunkRecords; ++i)
+    {
+      Part4_AccumulateRecord(&s_readChunk[i]);
+    }
+
+    address += chunkBytes;
+    remainingRecords -= chunkRecords;
+  }
+
+  Part4_FinalizeStats();
+  s_statsDirty = 0U;
+
+  /* REMOVE for demo
+  const char *msg = "[stats] recompute done\r\n";
+  HAL_UART_Transmit(&huart1, (uint8_t *)msg, (uint16_t)strlen(msg), 100);
+  */
+
+  return LAB4_FLASH_STATUS_OK;
+}
+
+static void Part4_UpdateStatsIfNeeded(void)
+{
+  if (displayMode == DISPLAY_STATS)
+  {
+    if ((s_statsDirty != 0U) || (s_logBufferCount > 0U))
+    {
+      if (Part4_RecomputeStatsFromFlash() != LAB4_FLASH_STATUS_OK)
+      {
+        Error_Handler();
+      }
+    }
+  }
+}
+
 void Sensors_Init(void)
 {
   if (BSP_HSENSOR_Init() != 0U)
@@ -114,6 +473,9 @@ void Sensors_Init(void)
 
 void Sensors_ReadAll(void)
 {
+  /* CHANGE 5: lightweight heartbeat counter */
+  static uint32_t sensorLoopCount = 0U;
+
   /* HTS221: humidity */
   humidity_pct = BSP_HSENSOR_ReadHumidity();
 
@@ -125,6 +487,22 @@ void Sensors_ReadAll(void)
 
   /* LPS22HB: pressure */
   pressure_hPa = BSP_PSENSOR_ReadPressure();
+
+  /* REMOVE for demo
+  sensorLoopCount++;
+  if ((sensorLoopCount % 10U) == 0U)
+  {
+    const char *msg = "[sensorTask] read ok\r\n";
+    HAL_UART_Transmit(&huart1, (uint8_t *)msg, (uint16_t)strlen(msg), 100);
+  }
+  */
+
+  /* Part 4: log all sensor samples, whether displayed or not */
+  Part4_LogCurrentSamples();
+
+  /* Only recompute the flash-based statistics when the user is actually in the
+   * statistics mode. This keeps the normal live display lightweight. */
+  Part4_UpdateStatsIfNeeded();
 }
 
 void Handle_Button(void)
@@ -153,8 +531,6 @@ void UART_SendSelectedSensor(void)
 {
   int len = 0;
 
-  /* The lab handout notes that float formatting can be troublesome when
-   * FreeRTOS is enabled, so the scalar sensor values are printed as ints. */
   switch (displayMode)
   {
     case DISPLAY_HUMIDITY:
@@ -179,6 +555,40 @@ void UART_SendSelectedSensor(void)
       len = snprintf(uartBuf, sizeof(uartBuf),
                      "LPS22HB Pressure = %d hPa\r\n",
                      (int)pressure_hPa);
+      break;
+
+    case DISPLAY_STATS:
+      if (s_totalLoggedRecords == 0U)
+      {
+        len = snprintf(uartBuf, sizeof(uartBuf),
+                       "Stats: no flash samples logged yet\r\n");
+      }
+      else if (s_statsDirty != 0U)
+      {
+        len = snprintf(uartBuf, sizeof(uartBuf),
+                       "Stats: computing from flash...\r\n");
+      }
+      else
+      {
+        len = snprintf(uartBuf, sizeof(uartBuf),
+                       "Flash stats | "
+                       "H: N=%lu mean=%ld var=%ld | "
+                       "Mx: N=%lu mean=%ld var=%ld | "
+                       "Ax: N=%lu mean=%ld var=%ld | "
+                       "P: N=%lu mean=%ld var=%ld\r\n",
+                       (unsigned long)s_stats[LOG_SENSOR_HUMIDITY].count,
+                       (long)s_stats[LOG_SENSOR_HUMIDITY].mean,
+                       (long)s_stats[LOG_SENSOR_HUMIDITY].variance,
+                       (unsigned long)s_stats[LOG_SENSOR_MAGNETO_X].count,
+                       (long)s_stats[LOG_SENSOR_MAGNETO_X].mean,
+                       (long)s_stats[LOG_SENSOR_MAGNETO_X].variance,
+                       (unsigned long)s_stats[LOG_SENSOR_ACCELERO_X].count,
+                       (long)s_stats[LOG_SENSOR_ACCELERO_X].mean,
+                       (long)s_stats[LOG_SENSOR_ACCELERO_X].variance,
+                       (unsigned long)s_stats[LOG_SENSOR_PRESSURE].count,
+                       (long)s_stats[LOG_SENSOR_PRESSURE].mean,
+                       (long)s_stats[LOG_SENSOR_PRESSURE].variance);
+      }
       break;
 
     default:
@@ -228,45 +638,51 @@ int main(void)
   MX_OCTOSPI1_Init();
   /* USER CODE BEGIN 2 */
   const char *msg = "UART alive\r\n";
-  HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
+    HAL_UART_Transmit(&huart1, (uint8_t*)msg, strlen(msg), 100);
 
-  /* Part 3 uses a small reusable flash wrapper instead of calling the BSP
-   * directly from main(). That keeps the board-specific QSPI details in one
-   * place and makes Part 4 logging code easier to build on top later. */
-  if (Lab4Flash_Init() != LAB4_FLASH_STATUS_OK)
-  {
-    const char *flashInitError = "QSPI init failed\r\n";
-    HAL_UART_Transmit(&huart1, (uint8_t *)flashInitError, (uint16_t)strlen(flashInitError), 100);
-    Error_Handler();
-  }
-
-  if (Lab4Flash_RunSelfTest() != LAB4_FLASH_STATUS_OK)
-  {
-    const char *flashTestError = "QSPI erase/write/read test failed\r\n";
-    HAL_UART_Transmit(&huart1, (uint8_t *)flashTestError, (uint16_t)strlen(flashTestError), 100);
-    Error_Handler();
-  }
-  else
-  {
-    const QSPI_Info *flashInfo = Lab4Flash_GetInfo();
-    char flashReadyMsg[96];
-    int flashReadyLen = snprintf(flashReadyMsg, sizeof(flashReadyMsg),
-                                 "QSPI ready. Flash=%luB, page=%luB, log start=0x%06lX\r\n",
-                                 (unsigned long)flashInfo->FlashSize,
-                                 (unsigned long)flashInfo->ProgPageSize,
-                                 (unsigned long)LAB4_FLASH_LOG_START_ADDRESS);
-
-    if (flashReadyLen > 0)
+    if (Lab4Flash_Init() != LAB4_FLASH_STATUS_OK)
     {
-      HAL_UART_Transmit(&huart1, (uint8_t *)flashReadyMsg, (uint16_t)flashReadyLen, 100);
+      const char *flashInitError = "QSPI init failed\r\n";
+      HAL_UART_Transmit(&huart1, (uint8_t *)flashInitError, (uint16_t)strlen(flashInitError), 100);
+      Error_Handler();
     }
-  }
 
-  Sensors_Init();
+    if (Lab4Flash_RunSelfTest() != LAB4_FLASH_STATUS_OK)
+    {
+      const char *flashTestError = "QSPI erase/write/read test failed\r\n";
+      HAL_UART_Transmit(&huart1, (uint8_t *)flashTestError, (uint16_t)strlen(flashTestError), 100);
+      Error_Handler();
+    }
+    else
+    {
+      const QSPI_Info *flashInfo = Lab4Flash_GetInfo();
+      char flashReadyMsg[96];
+      int flashReadyLen = snprintf(flashReadyMsg, sizeof(flashReadyMsg),
+                                   "QSPI ready. Flash=%luB, page=%luB, log start=0x%06lX\r\n",
+                                   (unsigned long)flashInfo->FlashSize,
+                                   (unsigned long)flashInfo->ProgPageSize,
+                                   (unsigned long)LAB4_FLASH_LOG_START_ADDRESS);
 
-   const char *startupMsg =
-       "\r\nLab 4 Part 1 started. Press B2 to cycle sensors.\r\n";
-   HAL_UART_Transmit(&huart1, (uint8_t *)startupMsg, (uint16_t)strlen(startupMsg), 100);
+      if (flashReadyLen > 0)
+      {
+        HAL_UART_Transmit(&huart1, (uint8_t *)flashReadyMsg, (uint16_t)flashReadyLen, 100);
+      }
+    }
+
+    if (Part4_InitLogging() != LAB4_FLASH_STATUS_OK)
+    {
+      const char *flashLogError = "Part 4 log region init failed\r\n";
+      HAL_UART_Transmit(&huart1, (uint8_t *)flashLogError, (uint16_t)strlen(flashLogError), 100);
+      Error_Handler();
+    }
+
+    Sensors_Init();
+
+    {
+      const char *startupMsg =
+          "\r\nFreeRTOS + QSPI startup OK. Press B2 to cycle sensors and flash stats.\r\n";
+      HAL_UART_Transmit(&huart1, (uint8_t *)startupMsg, (uint16_t)strlen(startupMsg), 100);
+    }
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
